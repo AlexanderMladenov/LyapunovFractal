@@ -8,8 +8,9 @@
 #include <SDL.h>
 #include <glm/glm.hpp>
 
+const int FRAME_RES = 256;
 std::string fractString("AABAB");
-glm::vec3 FrameBuffer[1024][1024];
+glm::vec3 FrameBuffer[FRAME_RES][FRAME_RES];
 std::mt19937 m_Gen(5892753628915);
 SDL_Window* m_Window = nullptr;
 SDL_Surface* m_Surface = nullptr;
@@ -50,12 +51,12 @@ inline std::uint32_t ConvertPixel(const glm::vec3& pixel)
     return (b << bs) | (g << gs) | (r << rs);
 }
 
-void SwapBuffers(const vec3 frameBuf[1024][1024])
+void SwapBuffers(const vec3 frameBuf[FRAME_RES][FRAME_RES])
 {
-    for (int y = 0; y < 1024; y++)
+    for (int y = 0; y < FRAME_RES; y++)
     {
         Uint32 *row = (Uint32*)((Uint8*)m_Surface->pixels + y * m_Surface->pitch);
-        for (int x = 0; x < 1024; x++)
+        for (int x = 0; x < FRAME_RES; x++)
             row[x] = ConvertPixel(frameBuf[y][x]);
     }
     SDL_UpdateWindowSurface(m_Window);
@@ -78,8 +79,8 @@ void waitForUserExit()
 
 float r(int n)
 {
-    std::uniform_real_distribution<float> distributionA(2, 4);
-    std::uniform_real_distribution<float> distributionB(2, 4);
+    std::uniform_real_distribution<float> distributionA(0, 4);
+    std::uniform_real_distribution<float> distributionB(0, 4);
 
     float a = distributionA(m_Gen);
     float b = distributionB(m_Gen);
@@ -97,7 +98,13 @@ float r(int n)
 
 }
 
-#define ITERATIONS 10000
+template <typename T = float>
+auto clamp(T x, T a, T b) -> T
+{
+    return (x > a) ? ((x < b) ? x : b) : a;
+}
+
+#define ITERATIONS 1000
 std::vector<float> precomtuteIterations()
 {
     std::vector<float> result;
@@ -135,7 +142,7 @@ int main(int argc, char* argv[])
     }
 
     m_Window = SDL_CreateWindow("Sword", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-        1024, 1024, SDL_WINDOW_OPENGL);
+        FRAME_RES, FRAME_RES, SDL_WINDOW_OPENGL);
 
     if (!m_Window)
     {
@@ -151,24 +158,32 @@ int main(int argc, char* argv[])
         return false;
     }
 
-    auto iterations = precomtuteIterations();
-    auto lyapunovExp = computeLyapunovExponent(iterations);
+    for (int x = 0; x < FRAME_RES; x++)
+    {
+        for (int y = 0; y < FRAME_RES; y++)
+        {
+            auto iterations = precomtuteIterations();
+            auto lyapunovExp = computeLyapunovExponent(iterations);
+            printf("%d, %d  %f\n", x, y, lyapunovExp);
+            if (lyapunovExp > 0.f)
+            {
+                FrameBuffer[x][y] = vec3(0, 0.3, 1);
+            }
+            else if (lyapunovExp == 0.f)
+            {
+                FrameBuffer[x][y] = vec3(1, 0.3, 0);
+            }
+            else
+            {
+                FrameBuffer[x][y] = vec3(1, 0.6, 0);//clamp(vec3(1, 0.3, 0) * abs(lyapunovExp), 0.f, 1.f);
+            }
+        }
+        SwapBuffers(FrameBuffer);
+    }
 
     waitForUserExit();
-    SwapBuffers(FrameBuffer);
     return 0;
 }
-
-
-
-
-
-
-
-
-
-
-
 
 
 
