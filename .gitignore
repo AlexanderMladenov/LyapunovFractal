@@ -1,0 +1,7 @@
+*.suo
+*.sdf
+*.opensdf
+x64/
+Lyapunov/x64
+Lyapunov/Debug
+Lyapunov/*.vcxproj.user
