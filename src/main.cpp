@@ -5,13 +5,14 @@
 #include <algorithm>
 #include <math.h>
 #include <iostream>
+#include <thread>
 #include <SDL.h>
 #include <glm/glm.hpp>
 
-const int FRAME_RES = 256;
+const int FRAME_RES = 1024;
 std::string fractString("AABAB");
 glm::vec3 FrameBuffer[FRAME_RES][FRAME_RES];
-std::mt19937 m_Gen(5892753628915);
+std::mt19937 m_Gen(9874651);
 SDL_Window* m_Window = nullptr;
 SDL_Surface* m_Surface = nullptr;
 
@@ -91,7 +92,8 @@ float r(int n, const vec2& chosenPoint)
     float b = chosenPoint.y;
 
     int Sn = n % fractString.size();
-    if (fractString[Sn] == 'A')
+    auto x = fractString[Sn];
+    if (x == 'A')
     {
         return a;
     }
@@ -109,7 +111,7 @@ auto clamp(T x, T a, T b) -> T
     return (x > a) ? ((x < b) ? x : b) : a;
 }
 
-#define ITERATIONS 500
+#define ITERATIONS 3000
 std::vector<float> precomtuteIterations(const vec2& cPoint)
 {
     std::vector<float> result;
@@ -117,7 +119,7 @@ std::vector<float> precomtuteIterations(const vec2& cPoint)
     result[0] = 0.5f;
     for (int i = 1; i < ITERATIONS; i++)
     {
-        result[i] = r(i, cPoint) * result[i - 1] * (1 - result[i - 1]);
+        result[i] = r(i - 1, cPoint) * result[i - 1] * (1 - result[i - 1]);
     }
     return result;
 }
@@ -136,6 +138,14 @@ float computeLyapunovExponent(const std::vector<float>& iterations, const vec2& 
     }
 
     return (float)(result / ITERATIONS);
+}
+
+float DoFractal()
+{
+    auto point = choosePoint(2, 4);
+    auto iterations = precomtuteIterations(point);
+    auto lyapunovExp = computeLyapunovExponent(iterations, point);
+    return lyapunovExp;
 }
 
 #undef main
@@ -163,26 +173,21 @@ int main(int argc, char* argv[])
         std::cout << "SDL_GetWindowSurface failed: " << SDL_GetError() << std::endl;
         return false;
     }
+#define DIM 1024
 
     for (int x = 0; x < FRAME_RES; x++)
     {
         for (int y = 0; y < FRAME_RES; y++)
         {
-            auto point = choosePoint(0, 4);
-            auto iterations = precomtuteIterations(point);
-            auto lyapunovExp = computeLyapunovExponent(iterations, point);
-            if (lyapunovExp > 0.f)
-            {
-                FrameBuffer[x][y] = vec3(0, 0, 1);
-            }
-            else if (lyapunovExp == 0.f)
-            {
-                FrameBuffer[x][y] = vec3(0, 1, 0);
-            }
-            else
-            {
-                FrameBuffer[x][y] = clamp(vec3(1, 1, 0.1) *(abs(lyapunovExp)),vec3(0), vec3(1));
-            }
+           // auto lyapunovExp = DoFractal();
+            //RED
+            auto r = [&](){float r, s = 0, x = .5; for (int k = 0; k++ < 500;)r = k % 5 == 2 || k % 5 == 4 ? (2.*x) / DIM + 2 : (2.*y) / DIM + 2, x *= r*(1 - x), s += log(fabs(r - r * 2 * x)); return abs(s); };
+            //GREEN
+            auto g = [&](){float r, s = 0, x = .5; for (int k = 0; k++<500;)r = k % 5 == 2 || k % 5 == 4 ? (2.*x) / DIM + 2 : (2.*y) / DIM + 2, x *= r*(1 - x), s += log(fabs(r - r * 2 * x)); return s>0 ? s : 0; };
+            //BLUE
+            auto b = [&](){float r, s = 0, x = .5; for (int k = 0; k++ < 500;)r = k % 5 == 2 || k % 5 == 4 ? (2.*x) / DIM + 2 : (2.*y) / DIM + 2, x *= r*(1 - x), s += log(fabs(r - r * 2 * x)); return abs(s*x); };
+
+            FrameBuffer[x][y] = vec3(r(), g(), b());
         }
         SwapBuffers(FrameBuffer);
     }
@@ -190,10 +195,3 @@ int main(int argc, char* argv[])
     waitForUserExit();
     return 0;
 }
-
-
-
-
-
-
-
