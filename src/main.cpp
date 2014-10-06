@@ -9,7 +9,7 @@
 #include <SDL.h>
 #include <glm/glm.hpp>
 
-const int FRAME_RES = 256;
+const int FRAME_RES = 512;
 std::string fractString("AABAB");
 glm::vec3 FrameBuffer[FRAME_RES][FRAME_RES];
 std::mt19937 m_Gen(9874651);
@@ -78,13 +78,6 @@ void waitForUserExit()
     }
 }
 
-vec2 choosePoint(int a, int b)
-{
-    std::uniform_real_distribution<float> distributionA(a, b);
-    std::uniform_real_distribution<float> distributionB(a, b);
-    return vec2(distributionA(m_Gen), distributionB(m_Gen));
-}
-
 float r(int n, const vec2& chosenPoint)
 {
 
@@ -101,26 +94,26 @@ float r(int n, const vec2& chosenPoint)
     {
         return b;
     }
-    return 0.f;
-
 }
 
 template <typename T = float>
 auto clamp(T x, T a, T b) -> T
 {
-    return (x > a) ? ((x < b) ? x : b) : a;
+	return x > a ? a : x < b ? b : x;
 }
 
-#define ITERATIONS 4000
+#define ITERATIONS 500
 std::vector<float> precomtuteIterations(const vec2& cPoint)
 {
     std::vector<float> result;
     result.resize(ITERATIONS);
     result[0] = 0.5f;
+
     for (int i = 1; i < ITERATIONS; i++)
     {
         result[i] = r(i - 1, cPoint) * result[i - 1] * (1 - result[i - 1]);
     }
+
     return result;
 }
 
@@ -140,10 +133,16 @@ float computeLyapunovExponent(const std::vector<float>& iterations, const vec2& 
     return (float)(result / (float)ITERATIONS);
 }
 
-float DoFractal()
+float DoFractal(int x, int y)
 {
-    auto point = choosePoint(2, 4);
-    auto iterations = precomtuteIterations(point);
+	float a = (float) x / (float) FRAME_RES;
+	a *= 4.0f;
+	
+	float b = (float) y / (float) FRAME_RES;
+	b *= 4.0f;
+
+	auto point = vec2(a, b);
+	auto iterations = precomtuteIterations(point);
     auto lyapunovExp = computeLyapunovExponent(iterations, point);
     return lyapunovExp;
 }
@@ -178,12 +177,21 @@ int main(int argc, char* argv[])
     {
         for (int y = 0; y < FRAME_RES; y++)
         {
-            auto lyapunovExp = DoFractal();
+            auto lyapunovExp = DoFractal(x, y);
 
-            FrameBuffer[x][y] = vec3(abs(lyapunovExp));
+			if (lyapunovExp <= 0)
+			{
+				FrameBuffer[x][y] = vec3(abs(lyapunovExp), 0, 0);
+			}
+			else
+			{
+				FrameBuffer[x][y] = vec3(0, lyapunovExp, 0);
+			}
+
         }
         SwapBuffers(FrameBuffer);
     }
+
     SwapBuffers(FrameBuffer);
     waitForUserExit();
     return 0;
