@@ -9,7 +9,7 @@
 #include <SDL.h>
 #include <glm/glm.hpp>
 
-const int FRAME_RES = 1024;
+const int FRAME_RES = 256;
 std::string fractString("AABAB");
 glm::vec3 FrameBuffer[FRAME_RES][FRAME_RES];
 std::mt19937 m_Gen(9874651);
@@ -111,7 +111,7 @@ auto clamp(T x, T a, T b) -> T
     return (x > a) ? ((x < b) ? x : b) : a;
 }
 
-#define ITERATIONS 3000
+#define ITERATIONS 4000
 std::vector<float> precomtuteIterations(const vec2& cPoint)
 {
     std::vector<float> result;
@@ -137,7 +137,7 @@ float computeLyapunovExponent(const std::vector<float>& iterations, const vec2& 
         result += logf(abs(ri * (oneminusa)));
     }
 
-    return (float)(result / ITERATIONS);
+    return (float)(result / (float)ITERATIONS);
 }
 
 float DoFractal()
@@ -173,21 +173,14 @@ int main(int argc, char* argv[])
         std::cout << "SDL_GetWindowSurface failed: " << SDL_GetError() << std::endl;
         return false;
     }
-#define DIM 1024
 
     for (int x = 0; x < FRAME_RES; x++)
     {
         for (int y = 0; y < FRAME_RES; y++)
         {
-           // auto lyapunovExp = DoFractal();
-            //RED
-            auto r = [&](){float r, s = 0, x = .5; for (int k = 0; k++ < 500;)r = k % 5 == 2 || k % 5 == 4 ? (2.*x) / DIM + 2 : (2.*y) / DIM + 2, x *= r*(1 - x), s += log(fabs(r - r * 2 * x)); return abs(s); };
-            //GREEN
-            auto g = [&](){float r, s = 0, x = .5; for (int k = 0; k++<500;)r = k % 5 == 2 || k % 5 == 4 ? (2.*x) / DIM + 2 : (2.*y) / DIM + 2, x *= r*(1 - x), s += log(fabs(r - r * 2 * x)); return s>0 ? s : 0; };
-            //BLUE
-            auto b = [&](){float r, s = 0, x = .5; for (int k = 0; k++ < 500;)r = k % 5 == 2 || k % 5 == 4 ? (2.*x) / DIM + 2 : (2.*y) / DIM + 2, x *= r*(1 - x), s += log(fabs(r - r * 2 * x)); return abs(s*x); };
+            auto lyapunovExp = DoFractal();
 
-            FrameBuffer[x][y] = vec3(r(), g(), b());
+            FrameBuffer[x][y] = vec3(abs(lyapunovExp));
         }
         SwapBuffers(FrameBuffer);
     }
