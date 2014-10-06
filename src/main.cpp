@@ -8,7 +8,7 @@
 #include <SDL.h>
 #include <glm/glm.hpp>
 
-const int FRAME_RES = 256;
+const int FRAME_RES = 1024;
 std::string fractString("AABAB");
 glm::vec3 FrameBuffer[FRAME_RES][FRAME_RES];
 std::mt19937 m_Gen(5892753628915);
@@ -175,7 +175,7 @@ int main(int argc, char* argv[])
             }
             else
             {
-                FrameBuffer[x][y] = vec3(1, 0.6, 0);//clamp(vec3(1, 0.3, 0) * abs(lyapunovExp), 0.f, 1.f);
+                FrameBuffer[x][y] = clamp(vec3(0.01, 0.001, 0) * abs(lyapunovExp), 0.f, 1.f);
             }
         }
         SwapBuffers(FrameBuffer);
