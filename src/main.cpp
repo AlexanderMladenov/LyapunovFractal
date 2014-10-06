@@ -109,7 +109,7 @@ auto clamp(T x, T a, T b) -> T
     return (x > a) ? ((x < b) ? x : b) : a;
 }
 
-#define ITERATIONS 10000
+#define ITERATIONS 500
 std::vector<float> precomtuteIterations(const vec2& cPoint)
 {
     std::vector<float> result;
@@ -137,6 +137,7 @@ float computeLyapunovExponent(const std::vector<float>& iterations, const vec2& 
 
     return (float)(result / ITERATIONS);
 }
+
 #undef main
 int main(int argc, char* argv[])
 {
@@ -146,7 +147,7 @@ int main(int argc, char* argv[])
         return false;
     }
 
-    m_Window = SDL_CreateWindow("Sword", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+    m_Window = SDL_CreateWindow("LyapunovFract", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
         FRAME_RES, FRAME_RES, SDL_WINDOW_OPENGL);
 
     if (!m_Window)
@@ -167,25 +168,25 @@ int main(int argc, char* argv[])
     {
         for (int y = 0; y < FRAME_RES; y++)
         {
-            auto point = choosePoint(2, 4);
+            auto point = choosePoint(0, 4);
             auto iterations = precomtuteIterations(point);
             auto lyapunovExp = computeLyapunovExponent(iterations, point);
             if (lyapunovExp > 0.f)
             {
-                FrameBuffer[x][y] = vec3(0, 0.3, 1);
+                FrameBuffer[x][y] = vec3(0, 0, 1);
             }
             else if (lyapunovExp == 0.f)
             {
-                FrameBuffer[x][y] = vec3(1, 0.3, 0);
+                FrameBuffer[x][y] = vec3(0, 1, 0);
             }
             else
             {
-                FrameBuffer[x][y] = clamp(vec3(0.1, 0.1, 0.1) *(1- abs(lyapunovExp)),vec3(0), vec3(1));
+                FrameBuffer[x][y] = clamp(vec3(1, 1, 0.1) *(abs(lyapunovExp)),vec3(0), vec3(1));
             }
         }
         SwapBuffers(FrameBuffer);
     }
-
+    SwapBuffers(FrameBuffer);
     waitForUserExit();
     return 0;
 }
