@@ -8,7 +8,7 @@
 #include <SDL.h>
 #include <glm/glm.hpp>
 
-const int FRAME_RES = 1024;
+const int FRAME_RES = 256;
 std::string fractString("AABAB");
 glm::vec3 FrameBuffer[FRAME_RES][FRAME_RES];
 std::mt19937 m_Gen(5892753628915);
@@ -77,13 +77,18 @@ void waitForUserExit()
     }
 }
 
-float r(int n)
+vec2 choosePoint(int a, int b)
 {
-    std::uniform_real_distribution<float> distributionA(0, 4);
-    std::uniform_real_distribution<float> distributionB(0, 4);
+    std::uniform_real_distribution<float> distributionA(a, b);
+    std::uniform_real_distribution<float> distributionB(a, b);
+    return vec2(distributionA(m_Gen), distributionB(m_Gen));
+}
 
-    float a = distributionA(m_Gen);
-    float b = distributionB(m_Gen);
+float r(int n, const vec2& chosenPoint)
+{
+
+    float a = chosenPoint.x;
+    float b = chosenPoint.y;
 
     int Sn = n % fractString.size();
     if (fractString[Sn] == 'A')
@@ -104,20 +109,20 @@ auto clamp(T x, T a, T b) -> T
     return (x > a) ? ((x < b) ? x : b) : a;
 }
 
-#define ITERATIONS 1000
-std::vector<float> precomtuteIterations()
+#define ITERATIONS 10000
+std::vector<float> precomtuteIterations(const vec2& cPoint)
 {
     std::vector<float> result;
     result.resize(ITERATIONS);
     result[0] = 0.5f;
     for (int i = 1; i < ITERATIONS; i++)
     {
-        result[i] = r(i) * result[i - 1] * ( 1 - result[i - 1]);
+        result[i] = r(i, cPoint) * result[i - 1] * (1 - result[i - 1]);
     }
     return result;
 }
 
-float computeLyapunovExponent(const std::vector<float>& iterations)
+float computeLyapunovExponent(const std::vector<float>& iterations, const vec2& cPoint)
 {
     float result = 0.f;
 
@@ -125,12 +130,12 @@ float computeLyapunovExponent(const std::vector<float>& iterations)
     {
         auto a = (2 * iterations[i]);
         auto oneminusa = 1 - a;
-        auto ri = r(i);
+        auto ri = r(i, cPoint);
 
         result += logf(abs(ri * (oneminusa)));
     }
 
-    return result;
+    return (float)(result / ITERATIONS);
 }
 #undef main
 int main(int argc, char* argv[])
@@ -162,9 +167,9 @@ int main(int argc, char* argv[])
     {
         for (int y = 0; y < FRAME_RES; y++)
         {
-            auto iterations = precomtuteIterations();
-            auto lyapunovExp = computeLyapunovExponent(iterations);
-            printf("%d, %d  %f\n", x, y, lyapunovExp);
+            auto point = choosePoint(2, 4);
+            auto iterations = precomtuteIterations(point);
+            auto lyapunovExp = computeLyapunovExponent(iterations, point);
             if (lyapunovExp > 0.f)
             {
                 FrameBuffer[x][y] = vec3(0, 0.3, 1);
@@ -175,7 +180,7 @@ int main(int argc, char* argv[])
             }
             else
             {
-                FrameBuffer[x][y] = clamp(vec3(0.01, 0.001, 0) * abs(lyapunovExp), 0.f, 1.f);
+                FrameBuffer[x][y] = clamp(vec3(0.1, 0.1, 0.1) *(1- abs(lyapunovExp)),vec3(0), vec3(1));
             }
         }
         SwapBuffers(FrameBuffer);
