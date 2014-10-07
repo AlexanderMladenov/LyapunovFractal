@@ -103,7 +103,7 @@ auto clamp(T x, T a, T b) -> T
     return x > a ? a : x < b ? b : x;
 }
 
-#define ITERATIONS 500
+#define ITERATIONS 1000
 std::vector<float> precomtuteIterations(const vec2& cPoint)
 {
     std::vector<float> result;
@@ -125,13 +125,11 @@ float computeLyapunovExponent(const std::vector<float>& iterations, const vec2& 
     for (int i = 1; i < ITERATIONS; i++)
     {
         auto a = (2 * iterations[i]);
-        auto oneminusa = 1 - a;
         auto ri = r(i, cPoint);
-
-        result += logf(abs(ri * (oneminusa)));
+        result += logf(abs(ri * (1 - a)));
     }
 
-    return (float)(result / (float)ITERATIONS);
+    return (result / (float)ITERATIONS);
 }
 
 void renderFractalPixel(int x, int y)
@@ -171,8 +169,8 @@ void renderFractalRegion(int xFrom, int xTo)
     }
     return;
 }
-std::vector<std::thread> threads;
 
+std::vector<std::thread> threads;
 void DoFractalThreaded()
 {
     unsigned int numThreads = std::thread::hardware_concurrency();
@@ -182,7 +180,6 @@ void DoFractalThreaded()
         auto fun = std::bind(&renderFractalRegion, delta * i, delta * i + delta);
         threads.emplace_back(fun);
     }
-
 }
 #undef main
 int main(int argc, char* argv[])
