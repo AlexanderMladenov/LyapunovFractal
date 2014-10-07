@@ -6,10 +6,11 @@
 #include <math.h>
 #include <iostream>
 #include <thread>
+#include <atomic>
 #include <SDL.h>
 #include <glm/glm.hpp>
 
-const int FRAME_RES = 512;
+const int FRAME_RES = 1024;
 std::string fractString("AABAB");
 glm::vec3 FrameBuffer[FRAME_RES][FRAME_RES];
 std::mt19937 m_Gen(9874651);
@@ -66,14 +67,14 @@ void SwapBuffers(const vec3 frameBuf[FRAME_RES][FRAME_RES])
 void waitForUserExit()
 {
     SDL_Event e;
-    bool wantToQuit = false;
-    while (!wantToQuit)
+    bool wantExit = false;
+    while (!wantExit)
     {
         SDL_PollEvent(&e);
 
         if (e.type == SDL_QUIT)
         {
-            wantToQuit = true;
+            wantExit = true;
         }
     }
 }
@@ -99,7 +100,7 @@ float r(int n, const vec2& chosenPoint)
 template <typename T = float>
 auto clamp(T x, T a, T b) -> T
 {
-	return x > a ? a : x < b ? b : x;
+    return x > a ? a : x < b ? b : x;
 }
 
 #define ITERATIONS 500
@@ -133,20 +134,56 @@ float computeLyapunovExponent(const std::vector<float>& iterations, const vec2& 
     return (float)(result / (float)ITERATIONS);
 }
 
-float DoFractal(int x, int y)
+void renderFractalPixel(int x, int y)
 {
-	float a = (float) x / (float) FRAME_RES;
-	a *= 4.0f;
-	
-	float b = (float) y / (float) FRAME_RES;
-	b *= 4.0f;
+    float a = (float)x / (float)(FRAME_RES);
+    a = 2.f + a * 2.f;
 
-	auto point = vec2(a, b);
-	auto iterations = precomtuteIterations(point);
+    float b = (float)y / (float)(FRAME_RES);
+    b = 2.f + b * 2.f;
+
+    auto point = vec2(a, b);
+    auto iterations = precomtuteIterations(point);
     auto lyapunovExp = computeLyapunovExponent(iterations, point);
-    return lyapunovExp;
+    if (lyapunovExp < 0)
+    {
+        FrameBuffer[x][y] = vec3(abs(lyapunovExp), abs(lyapunovExp), 0);
+    }
+    else if (lyapunovExp == 0.f)
+    {
+        FrameBuffer[x][y] = vec3(1, 1, 0);
+    }
+    else
+    {
+        FrameBuffer[x][y] = vec3(0, lyapunovExp * 0.5, lyapunovExp);
+    }
 }
 
+void renderFractalRegion(int xFrom, int xTo)
+{
+    for (auto x = xFrom; x < xTo; x++)
+    {
+        for (auto y = 0; y < FRAME_RES; y++)
+        {
+            renderFractalPixel(x, y);
+        }
+        SwapBuffers(FrameBuffer);
+    }
+    return;
+}
+std::vector<std::thread> threads;
+
+void DoFractalThreaded()
+{
+    unsigned int numThreads = std::thread::hardware_concurrency();
+    int delta = FRAME_RES / numThreads;
+    for (int i = 0; i < numThreads; i++)
+    {
+        auto fun = std::bind(&renderFractalRegion, delta * i, delta * i + delta);
+        threads.emplace_back(fun);
+    }
+
+}
 #undef main
 int main(int argc, char* argv[])
 {
@@ -156,7 +193,7 @@ int main(int argc, char* argv[])
         return false;
     }
 
-    m_Window = SDL_CreateWindow("LyapunovFract", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+    m_Window = SDL_CreateWindow("LyapunovFract", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
         FRAME_RES, FRAME_RES, SDL_WINDOW_OPENGL);
 
     if (!m_Window)
@@ -173,25 +210,20 @@ int main(int argc, char* argv[])
         return false;
     }
 
-    for (int x = 0; x < FRAME_RES; x++)
+    DoFractalThreaded();
+    
+    /*for (int y = FRAME_RES; y > 0; y--)
     {
-        for (int y = 0; y < FRAME_RES; y++)
+        for (int x = 0; x < FRAME_RES; x++)
         {
-            auto lyapunovExp = DoFractal(x, y);
-
-			if (lyapunovExp <= 0)
-			{
-				FrameBuffer[x][y] = vec3(abs(lyapunovExp), 0, 0);
-			}
-			else
-			{
-				FrameBuffer[x][y] = vec3(0, lyapunovExp, 0);
-			}
-
+            renderFractalPixel(x, y);
         }
         SwapBuffers(FrameBuffer);
+    }*/
+    for (auto&& th : threads)
+    {
+        th.join();
     }
-
     SwapBuffers(FrameBuffer);
     waitForUserExit();
     return 0;
