@@ -5,7 +5,6 @@ What is this?
 =============
 This is a small multithreaded application that renders a Lyapunov Fractal. You can read more about the fractals [HERE](http://en.wikipedia.org/wiki/Lyapunov_fractal)
 
-
 Current Features
 =============
 - Rendertime of a 1024x1024 with 750 iterations per pixel is less than 4 sec on 8 threads;
@@ -22,4 +21,14 @@ Current issues/bugs/TODO list
 
 How to build
 =============
-This repo contains all required things you need to build this application. External dependacies are GLM and SDL2 which are included in libs folder. You should just open the solution file and run in release mode.;
+Requirements:
+- MS Visual Studio 2013
+- SDL2 2.0.3 (included in libs)
+- GLM 0.9.5.4 (included in libs)
+
+External dependacies are GLM and SDL2 which are included in libs folder. 
+You should just open the solution file and run in release mode.
+
+Licence Information
+=============
+MIT Licence.
