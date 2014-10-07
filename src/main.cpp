@@ -222,9 +222,11 @@ int main(int argc, char* argv[])
         th.join();
     }
     auto end = std::chrono::high_resolution_clock::now();
-    auto time =(long) timePast(begin, end);
+    auto timeSec = timePast(begin, end);
+    auto timeMili = timePast<std::chrono::milliseconds>(begin, end);
+
     std::stringstream ss;
-    ss << "LyapunovFract: " << time << " sec";
+    ss << "LyapunovFract: " << timeSec << " sec and " << timeMili - (timeSec * 1000) << " milisec";
 
     SDL_SetWindowTitle(m_Window, ss.str().c_str());
     SwapBuffers(FrameBuffer);
