@@ -2,6 +2,7 @@
 #include <string>
 #include <vector>
 #include <random>
+#include <array>
 #include <math.h>
 #include <sstream>
 #include <iostream>
@@ -75,6 +76,7 @@ void waitForUserExit()
         if (e.type == SDL_QUIT)
         {
             wantExit = true;
+            exit(0);
         }
     }
 }
@@ -87,14 +89,7 @@ float r(int n, const vec2& chosenPoint)
 
     int Sn = n % fractString.size();
     auto x = fractString[Sn];
-    if (x == 'A')
-    {
-        return a;
-    }
-    else
-    {
-        return b;
-    }
+    return x == 'A' ? a : b;
 }
 
 template <typename T = float>
@@ -104,11 +99,11 @@ auto clamp(T x, T a, T b) -> T
 }
 
 #define ITERATIONS 750
-std::vector<float> precomtuteIterations(const vec2& cPoint)
+std::array<float, ITERATIONS> precomtuteIterations(const vec2& cPoint)
 {
-    std::vector<float> result;
-    result.resize(ITERATIONS);
+    std::array<float, ITERATIONS> result;
     result[0] = 0.5f;
+
     for (int i = 1; i < ITERATIONS; i++)
     {
         result[i] = r(i - 1, cPoint) * result[i - 1] * (1 - result[i - 1]);
@@ -117,14 +112,15 @@ std::vector<float> precomtuteIterations(const vec2& cPoint)
     return result;
 }
 
-float computeLyapunovExponent(const std::vector<float>& iterations, const vec2& cPoint)
+float computeLyapunovExponent(const std::array<float, ITERATIONS>& iterations, const vec2& cPoint)
 {
     float result = 0.f;
     auto iter = iterations;
     float ri[ITERATIONS];
+    auto point = cPoint;
     for (auto i = 1; i < ITERATIONS; i++)
     {
-        ri[i] = (r(i, cPoint));
+        ri[i] = abs(r(i, point));
     }
 
     float oneMinus2iterations[ITERATIONS];
