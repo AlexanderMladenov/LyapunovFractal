@@ -19,3 +19,7 @@ Current issues/bugs/TODO list
   iterations on a 1024x1024 resolution.
 - Make coloring user picked
 - Add a timed SwapBuffers to show output.
+
+How to build
+=============
+This repo contains all required things you need to build this application. External dependacies are GLM and SDL2 which are included in libs folder. You should just open the solution file and run in release mode.;

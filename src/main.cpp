@@ -9,6 +9,8 @@
 #include <SDL.h>
 #include <glm/glm.hpp>
 
+static const char* const VERSION = "1.0.0\0";
+
 const int FRAME_RES = 1024;
 std::string fractString("AABAB");
 glm::vec3 FrameBuffer[FRAME_RES][FRAME_RES];
@@ -190,6 +192,8 @@ inline long long timePast(const TimePoint& start, const TimePoint& end)
 #undef main
 int main(int argc, char* argv[])
 {
+    std::cout << "Lyapunov Fractal Renderer. Version: " << VERSION << std::endl;
+
     if (SDL_Init(SDL_INIT_EVERYTHING != 0))
     {
         std::cout << "SDL_init failed: " << SDL_GetError() << std::endl;
