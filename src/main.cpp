@@ -2,11 +2,10 @@
 #include <string>
 #include <vector>
 #include <random>
-#include <algorithm>
 #include <math.h>
+#include <sstream>
 #include <iostream>
 #include <thread>
-#include <atomic>
 #include <SDL.h>
 #include <glm/glm.hpp>
 
@@ -103,7 +102,7 @@ auto clamp(T x, T a, T b) -> T
     return x > a ? a : x < b ? b : x;
 }
 
-#define ITERATIONS 1000
+int ITERATIONS = 750;
 std::vector<float> precomtuteIterations(const vec2& cPoint)
 {
     std::vector<float> result;
@@ -165,7 +164,6 @@ void renderFractalRegion(int xFrom, int xTo)
         {
             renderFractalPixel(x, y);
         }
-        SwapBuffers(FrameBuffer);
     }
     return;
 }
@@ -181,6 +179,14 @@ void DoFractalThreaded()
         threads.emplace_back(fun);
     }
 }
+
+typedef  std::chrono::time_point<std::chrono::high_resolution_clock> TimePoint;
+template <typename T = std::chrono::seconds>
+inline long long timePast(const TimePoint& start, const TimePoint& end)
+{
+    return std::chrono::duration_cast<T>(end - start).count();
+}
+
 #undef main
 int main(int argc, char* argv[])
 {
@@ -206,6 +212,8 @@ int main(int argc, char* argv[])
         std::cout << "SDL_GetWindowSurface failed: " << SDL_GetError() << std::endl;
         return false;
     }
+    SwapBuffers(FrameBuffer);
+    auto begin = std::chrono::high_resolution_clock::now();
 
     DoFractalThreaded();
 
@@ -213,6 +221,12 @@ int main(int argc, char* argv[])
     {
         th.join();
     }
+    auto end = std::chrono::high_resolution_clock::now();
+    auto time =(long) timePast(begin, end);
+    std::stringstream ss;
+    ss << "LyapunovFract: " << time << " sec";
+
+    SDL_SetWindowTitle(m_Window, ss.str().c_str());
     SwapBuffers(FrameBuffer);
     waitForUserExit();
     return 0;
