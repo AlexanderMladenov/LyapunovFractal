@@ -208,15 +208,7 @@ int main(int argc, char* argv[])
     }
 
     DoFractalThreaded();
-    
-    /*for (int y = FRAME_RES; y > 0; y--)
-    {
-        for (int x = 0; x < FRAME_RES; x++)
-        {
-            renderFractalPixel(x, y);
-        }
-        SwapBuffers(FrameBuffer);
-    }*/
+
     for (auto&& th : threads)
     {
         th.join();
