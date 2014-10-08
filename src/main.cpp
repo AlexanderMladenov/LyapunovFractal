@@ -12,11 +12,16 @@
 static const char* const VERSION = "1.0.1\0";
 
 #define FRAME_RES 512
-#define ITERATIONS 2000
+#define ITERATIONS 750
 std::string fractString("AABAB");
-glm::vec3 FrameBuffer[FRAME_RES][FRAME_RES];
+float frameR[FRAME_RES][FRAME_RES];
+float frameG[FRAME_RES][FRAME_RES];
+float frameB[FRAME_RES][FRAME_RES];
 SDL_Window* m_Window = nullptr;
 SDL_Surface* m_Surface = nullptr;
+Uint8 redShift;
+Uint8 greenShift;
+Uint8 blueShift;
 
 template <typename T = float>
 auto clamp(T x, T a, T b) -> T
@@ -24,29 +29,25 @@ auto clamp(T x, T a, T b) -> T
     return x <= a ? a : x >= b ? b : x;
 }
 
-inline std::uint32_t ConvertPixel(const glm::vec3& pixel)
+inline std::uint32_t ConvertPixel(float pr, float pg, float pb)
 {
-    int rs = m_Surface->format->Rshift;
-    int gs = m_Surface->format->Gshift;
-    int bs = m_Surface->format->Bshift;
-
     std::uint8_t r, g, b;
-    r = ::clamp(pixel.r, 0.f, 1.f) * 255;
-    g = ::clamp(pixel.g, 0.f, 1.f) * 255;
-    b = ::clamp(pixel.b, 0.f, 1.f) * 255;
+    r = ::clamp(pr, 0.f, 1.f) * 255;
+    g = ::clamp(pg, 0.f, 1.f) * 255;
+    b = ::clamp(pb, 0.f, 1.f) * 255;
 
-    return (b << bs) | (g << gs) | (r << rs);
+    return (b << blueShift) | (g << greenShift) | (r << redShift);
 }
 
 using namespace glm;
 
-void SwapBuffers(const vec3 frameBuf[FRAME_RES][FRAME_RES])
+void SwapBuffers()
 {
     for (int y = 0; y < FRAME_RES; y++)
     {
         Uint32 *row = (Uint32*) ((Uint8*) m_Surface->pixels + y * m_Surface->pitch);
         for (int x = 0; x < FRAME_RES; x++)
-            row[x] = ConvertPixel(frameBuf[y][x]);
+            row[x] = ConvertPixel(frameR[y][x], frameG[y][x], frameB[y][x]);
     }
     SDL_UpdateWindowSurface(m_Window);
 }
@@ -117,19 +118,24 @@ void renderFractalPixel(int x, int y)
     float b = (float) y / (float) (FRAME_RES);
     b = 2.f + b * 2.f;
     
-    const vec2 p(a, b);
-    auto lyapunovExp = computeLyapunovExponent(p);
+    auto lyapunovExp = computeLyapunovExponent(vec2(a, b));
     if (lyapunovExp < 0)
     {
-        FrameBuffer[x][y] = vec3(abs(lyapunovExp), abs(lyapunovExp), 0);
+        frameR[x][y] = abs(lyapunovExp);
+        frameG[x][y] = abs(lyapunovExp);
+        frameB[x][y] = 0.f;
     }
     else if (lyapunovExp == 0.f)
     {
-        FrameBuffer[x][y] = vec3(1, 1, 0);
+        frameR[x][y] = 1;
+        frameG[x][y] = 1;
+        frameB[x][y] = 0.f;
     }
     else
     {
-        FrameBuffer[x][y] = vec3(0, lyapunovExp * 0.5, lyapunovExp);
+        frameR[x][y] = 0;
+        frameG[x][y] = lyapunovExp * 0.5;
+        frameB[x][y] = lyapunovExp;
     }
 }
 
@@ -199,7 +205,11 @@ int main(int argc, char* argv[])
         waitForUserExit();
         return -3;
     }
-    SwapBuffers(FrameBuffer);
+    redShift = m_Surface->format->Rshift;
+    greenShift = m_Surface->format->Gshift;
+    blueShift = m_Surface->format->Bshift;
+
+    SwapBuffers();
     auto end = std::chrono::high_resolution_clock::now();
     
     auto timeSec = timePast(begin, end);
@@ -223,10 +233,11 @@ int main(int argc, char* argv[])
     std::stringstream ss;
     ss << "Time taken to render Lyapunov Fractal: " << timeSec << " sec " << timeMili - (timeSec * 1000) << " milisec";
     std::cout << "Time taken to render Lyapunov Fractal: " << timeSec << " sec " << timeMili - (timeSec * 1000) << " milisec" << std::endl;
-    std::cout << "Fractal string used to generate image: " << fractString << ". With " << ITERATIONS << " iterations per pixel" << std:: endl;
+    std::cout << "Fractal string used to generate image: " << fractString << std::endl;
+    std::cout << ITERATIONS << " iterations per pixel" << std:: endl;
 
     SDL_SetWindowTitle(m_Window, ss.str().c_str());
-    SwapBuffers(FrameBuffer);
+    SwapBuffers();
     waitForUserExit();
     return 0;
 }
