@@ -13,6 +13,7 @@
 static const char* const VERSION = "1.0.0\0";
 
 #define FRAME_RES 512
+#define ITERATIONS 750
 std::string fractString("AABAB");
 glm::vec3 FrameBuffer[FRAME_RES][FRAME_RES];
 SDL_Window* m_Window = nullptr;
@@ -98,7 +99,6 @@ auto clamp(T x, T a, T b) -> T
     return x > a ? a : x < b ? b : x;
 }
 
-#define ITERATIONS 750
 std::array<float, ITERATIONS> precomtuteIterations(const vec2& cPoint)
 {
     std::array<float, ITERATIONS> result;
