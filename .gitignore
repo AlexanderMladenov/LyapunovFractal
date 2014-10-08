@@ -3,6 +3,8 @@
 *.opensdf
 x64/Debug
 x64/Release
+x64/Release SSE2
+x64/Release AVX
 Lyapunov/x64
 Lyapunov/Debug
 Lyapunov/*.vcxproj.user
