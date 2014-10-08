@@ -12,7 +12,7 @@
 static const char* const VERSION = "1.0.1\0";
 
 #define FRAME_RES 512
-#define ITERATIONS 750
+#define ITERATIONS 2000
 std::string fractString("AABAB");
 glm::vec3 FrameBuffer[FRAME_RES][FRAME_RES];
 SDL_Window* m_Window = nullptr;
