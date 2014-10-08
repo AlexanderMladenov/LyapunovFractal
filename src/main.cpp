@@ -58,7 +58,7 @@ void SwapBuffers(const vec3 frameBuf[FRAME_RES][FRAME_RES])
 {
     for (int y = 0; y < FRAME_RES; y++)
     {
-        Uint32 *row = (Uint32*)((Uint8*)m_Surface->pixels + y * m_Surface->pitch);
+        Uint32 *row = (Uint32*) ((Uint8*) m_Surface->pixels + y * m_Surface->pitch);
         for (int x = 0; x < FRAME_RES; x++)
             row[x] = ConvertPixel(frameBuf[y][x]);
     }
@@ -128,18 +128,18 @@ float computeLyapunovExponent(const std::array<float, ITERATIONS>& iterations, f
         result += logf(ri[i] * oneMinus2iterations[i]);
     }
 
-    return (result / (float)ITERATIONS);
+    return (result / (float) ITERATIONS);
 }
 
 void renderFractalPixel(int x, int y, float pX, float pY)
 {
-    float a = (float)x / (float)(FRAME_RES);
+    float a = (float) x / (float) (FRAME_RES);
     a = 2.f + a * 2.f;
 
-    float b = (float)y / (float)(FRAME_RES);
+    float b = (float) y / (float) (FRAME_RES);
     b = 2.f + b * 2.f;
 
-    auto iterations = precomtuteIterations(pX ,pY);
+    auto iterations = precomtuteIterations(pX, pY);
     auto lyapunovExp = computeLyapunovExponent(iterations, pX, pY);
     if (lyapunovExp < 0)
     {
@@ -169,7 +169,7 @@ inline void computePoints()
             pointsA[x][y] = a;
         }
     }
-    
+
 
     for (auto x = 0; x < FRAME_RES; x++)
     {
@@ -181,7 +181,7 @@ inline void computePoints()
         }
     }
 
-   
+
 }
 void renderFractalRegion(int xFrom, int xTo)
 {
@@ -218,7 +218,7 @@ inline long long timePast(const TimePoint& start, const TimePoint& end)
 int main(int argc, char* argv[])
 {
     std::cout << "Lyapunov Fractal Renderer. Version: " << VERSION << std::endl;
-
+    auto begin = std::chrono::high_resolution_clock::now();
     if (SDL_Init(SDL_INIT_EVERYTHING != 0))
     {
         std::cout << "SDL_init failed: " << SDL_GetError() << std::endl;
@@ -226,7 +226,7 @@ int main(int argc, char* argv[])
     }
 
     m_Window = SDL_CreateWindow("LyapunovFract", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
-        FRAME_RES, FRAME_RES, SDL_WINDOW_OPENGL);
+                                FRAME_RES, FRAME_RES, SDL_WINDOW_OPENGL);
 
     if (!m_Window)
     {
@@ -242,7 +242,14 @@ int main(int argc, char* argv[])
         return false;
     }
     SwapBuffers(FrameBuffer);
-    auto begin = std::chrono::high_resolution_clock::now();
+    auto end = std::chrono::high_resolution_clock::now();
+    auto timeSec = timePast(begin, end);
+    auto timeMili = timePast<std::chrono::milliseconds>(begin, end);
+    std::cout << "Seting up SDL took: " << timeSec << " sec " << timeMili - (timeSec * 1000) << " milisec" << std::endl;
+
+    begin = std::chrono::high_resolution_clock::now();
+    std::cout << "Starting rendering with: " << std::thread::hardware_concurrency() << " threads." << std::endl;
+
     computePoints();
     DoFractalThreaded();
 
@@ -250,12 +257,15 @@ int main(int argc, char* argv[])
     {
         th.join();
     }
-    auto end = std::chrono::high_resolution_clock::now();
-    auto timeSec = timePast(begin, end);
-    auto timeMili = timePast<std::chrono::milliseconds>(begin, end);
+    end = std::chrono::high_resolution_clock::now();
+    std::cout << "Rendering finished!" << std::endl;
+    timeSec = timePast(begin, end);
+    timeMili = timePast<std::chrono::milliseconds>(begin, end);
 
     std::stringstream ss;
-    ss << "LyapunovFract: " << timeSec << " sec and " << timeMili - (timeSec * 1000) << " milisec";
+    ss << "Time taken to render Lyapunov Fractal: " << timeSec << " sec " << timeMili - (timeSec * 1000) << " milisec";
+    std::cout << "Time taken to render Lyapunov Fractal: " << timeSec << " sec " << timeMili - (timeSec * 1000) << " milisec";
+    std::cout << "Fractal string used to generate image: " << fractString << ". With " << ITERATIONS << " iterations per pixel" << std:: endl;
 
     SDL_SetWindowTitle(m_Window, ss.str().c_str());
     SwapBuffers(FrameBuffer);
