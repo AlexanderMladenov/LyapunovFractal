@@ -81,11 +81,13 @@ void waitForUserExit()
     }
 }
 
-float r(int n, float pX, float pY)
+float r(int n, const vec2& point)
 {
+    auto& a = point.x;
+    auto& b = point.y;
     int Sn = n % fractString.size();
-    auto x = fractString[Sn];
-    return x == 'A' ? pX : pY;
+    auto& x = fractString[Sn];
+    return x == 'A' ? a : b;
 }
 
 template <typename T = float>
@@ -94,31 +96,28 @@ auto clamp(T x, T a, T b) -> T
     return x > a ? a : x < b ? b : x;
 }
 
-<<<<<<< HEAD
 std::array<float, ITERATIONS> precomtuteIterations(const vec2& cPoint)
-=======
-std::array<float, ITERATIONS> precomtuteIterations(float pX, float pY)
->>>>>>> origin/master
 {
     std::array<float, ITERATIONS> result;
     result[0] = 0.5f;
 
     for (int i = 1; i < ITERATIONS; i++)
     {
-        result[i] = r(i - 1, pX, pY) * result[i - 1] * (1 - result[i - 1]);
+        result[i] = r(i - 1, cPoint) * result[i - 1] * (1 - result[i - 1]);
     }
 
     return result;
 }
 
-float computeLyapunovExponent(const std::array<float, ITERATIONS>& iterations, float pX, float pY)
+float computeLyapunovExponent(const std::array<float, ITERATIONS>& iterations, const vec2& point)
 {
     float result = 0.f;
-    auto iter = iterations;
+    auto& iter = iterations;
+    auto p = point;
     float ri[ITERATIONS];
     for (auto i = 1; i < ITERATIONS; i++)
     {
-        ri[i] = abs(r(i, pX, pY));
+        ri[i] = abs(r(i, p));
     }
 
     float oneMinus2iterations[ITERATIONS];
@@ -135,16 +134,17 @@ float computeLyapunovExponent(const std::array<float, ITERATIONS>& iterations, f
     return (result / (float) ITERATIONS);
 }
 
-void renderFractalPixel(int x, int y, float pX, float pY)
+void renderFractalPixel(int x, int y)
 {
     float a = (float) x / (float) (FRAME_RES);
     a = 2.f + a * 2.f;
 
     float b = (float) y / (float) (FRAME_RES);
     b = 2.f + b * 2.f;
-
-    auto iterations = precomtuteIterations(pX, pY);
-    auto lyapunovExp = computeLyapunovExponent(iterations, pX, pY);
+    
+    const vec2 p(a, b);
+    auto& iterations = precomtuteIterations(p);
+    auto lyapunovExp = computeLyapunovExponent(iterations, p);
     if (lyapunovExp < 0)
     {
         FrameBuffer[x][y] = vec3(abs(lyapunovExp), abs(lyapunovExp), 0);
@@ -159,41 +159,13 @@ void renderFractalPixel(int x, int y, float pX, float pY)
     }
 }
 
-float pointsA[FRAME_RES][FRAME_RES];
-float pointsB[FRAME_RES][FRAME_RES];
-
-inline void computePoints()
-{
-    for (auto x = 0; x < FRAME_RES; x++)
-    {
-        for (auto y = 0; y < FRAME_RES; y++)
-        {
-            float a = (float) x / (float) (FRAME_RES);
-            a = 2.f + a * 2.f;
-            pointsA[x][y] = a;
-        }
-    }
-
-
-    for (auto x = 0; x < FRAME_RES; x++)
-    {
-        for (auto y = 0; y < FRAME_RES; y++)
-        {
-            float b = (float) y / (float) (FRAME_RES);
-            b = 2.f + b * 2.f;
-            pointsB[x][y] = b;
-        }
-    }
-
-
-}
 void renderFractalRegion(int xFrom, int xTo)
 {
     for (auto x = xFrom; x < xTo; x++)
     {
         for (auto y = 0; y < FRAME_RES; y++)
         {
-            renderFractalPixel(x, y, pointsA[x][y], pointsB[x][y]);
+            renderFractalPixel(x, y);
         }
     }
     return;
@@ -254,7 +226,6 @@ int main(int argc, char* argv[])
     begin = std::chrono::high_resolution_clock::now();
     std::cout << "Starting rendering with: " << std::thread::hardware_concurrency() << " threads." << std::endl;
 
-    computePoints();
     DoFractalThreaded();
 
     for (auto&& th : threads)
