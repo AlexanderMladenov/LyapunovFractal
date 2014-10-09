@@ -29,7 +29,7 @@ auto clamp(T x, T a, T b) -> T
     return x <= a ? a : x >= b ? b : x;
 }
 
-inline std::uint32_t ConvertPixel(float pr, float pg, float pb)
+std::uint32_t ConvertPixel(float pr, float pg, float pb)
 {
     std::uint8_t r, g, b;
     r = (Uint8)(::clamp(pr, 0.f, 1.f) * 255);
