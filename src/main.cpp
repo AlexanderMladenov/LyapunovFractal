@@ -11,8 +11,8 @@
 
 static const char* const VERSION = "1.0.1\0";
 
-#define FRAME_RES 512
-#define ITERATIONS 750
+#define FRAME_RES 800
+#define ITERATIONS 1000
 std::string fractString("AABAB");
 float frameR[FRAME_RES][FRAME_RES];
 float frameG[FRAME_RES][FRAME_RES];
@@ -32,9 +32,9 @@ auto clamp(T x, T a, T b) -> T
 inline std::uint32_t ConvertPixel(float pr, float pg, float pb)
 {
     std::uint8_t r, g, b;
-    r = ::clamp(pr, 0.f, 1.f) * 255;
-    g = ::clamp(pg, 0.f, 1.f) * 255;
-    b = ::clamp(pb, 0.f, 1.f) * 255;
+    r = (Uint8)(::clamp(pr, 0.f, 1.f) * 255);
+    g = (Uint8)(::clamp(pg, 0.f, 1.f) * 255);
+    b = (Uint8)(::clamp(pb, 0.f, 1.f) * 255);
 
     return (b << blueShift) | (g << greenShift) | (r << redShift);
 }
@@ -97,12 +97,12 @@ float computeLyapunovExponent(const vec2& point)
     }
 
     float oneMinus2iterations[ITERATIONS];
-    for (auto i = 1; i < ITERATIONS; i++)
+    for (auto i = 1; i < ITERATIONS; i++) // vectorized
     {
         oneMinus2iterations[i] = abs((1 - (2 * iter[i])));
     }
 
-    for (int i = 1; i < ITERATIONS; i++)
+    for (int i = 1; i < ITERATIONS; i++) // vectorized
     {
         result += logf(ri[i] * oneMinus2iterations[i]);
     }
@@ -134,7 +134,7 @@ void renderFractalPixel(int x, int y)
     else
     {
         frameR[x][y] = 0;
-        frameG[x][y] = lyapunovExp * 0.5;
+        frameG[x][y] = lyapunovExp * 0.5f;
         frameB[x][y] = lyapunovExp;
     }
 }
@@ -184,6 +184,8 @@ int main(int argc, char* argv[])
     {
         std::cout << "SDL_init failed: " << SDL_GetError() << std::endl;
         waitForUserExit();
+        SDL_DestroyWindow(m_Window);
+        SDL_Quit();
         return -1;
     }
 
@@ -194,6 +196,8 @@ int main(int argc, char* argv[])
     {
         std::cout << "SDL_CreateWindow failed: " << SDL_GetError() << std::endl;
         waitForUserExit();
+        SDL_DestroyWindow(m_Window);
+        SDL_Quit();
         return -2;
     }
 
@@ -203,6 +207,8 @@ int main(int argc, char* argv[])
     {
         std::cout << "SDL_GetWindowSurface failed: " << SDL_GetError() << std::endl;
         waitForUserExit();
+        SDL_DestroyWindow(m_Window);
+        SDL_Quit();
         return -3;
     }
     redShift = m_Surface->format->Rshift;
@@ -239,5 +245,8 @@ int main(int argc, char* argv[])
     SDL_SetWindowTitle(m_Window, ss.str().c_str());
     SwapBuffers();
     waitForUserExit();
+
+    SDL_DestroyWindow(m_Window);
+    SDL_Quit();
     return 0;
 }
